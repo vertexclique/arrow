@@ -51,4 +51,5 @@ lz4 = "1.23"
 zstd = "0.5"
 
 [features]
-default = ["arrow", "snap", "brotli", "flate2", "lz4", "zstd"]
+default = ["arrow_raw", "snap", "brotli", "flate2", "lz4", "zstd"]
+arrow_raw = ["arrow/prettyprint"]
