@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,32 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[package]
-name = "arrow-integration-testing"
-description = "Binaries used in the Arrow integration tests"
-version = "2.0.0-SNAPSHOT"
-homepage = "https://github.com/apache/arrow"
-repository = "https://github.com/apache/arrow"
-authors = ["Apache Arrow <dev@arrow.apache.org>"]
-license = "Apache-2.0"
-edition = "2018"
+set -eux
 
-[dependencies]
-arrow = { path = "../arrow" }
-clap = "2.33"
-serde = { version = "1.0", features = ["rc"] }
-serde_derive = "1.0"
-serde_json = { version = "1.0", features = ["preserve_order"] }
-hex = "0.4"
-
-[[bin]]
-name = "arrow-file-to-stream"
-path = "src/bin/arrow-file-to-stream.rs"
-
-[[bin]]
-name = "arrow-stream-to-file"
-path = "src/bin/arrow-stream-to-file.rs"
-
-[[bin]]
-name = "arrow-json-integration-test"
-path = "src/bin/arrow-json-integration-test.rs"
+pacman \
+  --noconfirm \
+  --sync \
+  --sysupgrade \
+  --sysupgrade
