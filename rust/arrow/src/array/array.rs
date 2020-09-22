@@ -2028,7 +2028,7 @@ impl TryFrom<Vec<(&str, ArrayRef)>> for StructArray {
             if let Some(len) = len {
                 if len != child_datum.len() {
                     return Err(ArrowError::InvalidArgumentError(
-                        format!("Array of field \"{}\" has length {}, but previous elements have length {}. 
+                        format!("Array of field \"{}\" has length {}, but previous elements have length {}.
                         All arrays in every entry in a struct array must have the same length.", field_name, child_datum.len(), len)
                     ));
                 }
@@ -2270,7 +2270,9 @@ where
         match self.draining {
             Draining::Ready => {
                 self.draining = Draining::Iterating;
-                self.i = self.len - 1;
+                if self.i == 0 {
+                    self.i = self.len - 1;
+                }
                 self.next_back()
             }
             Draining::Iterating => {
@@ -3194,10 +3196,26 @@ mod tests {
             .iter()
             .map(|&x| if x == "b" { None } else { Some(x) })
             .collect();
+
         assert_eq!(
             array.keys().rev().collect::<Vec<Option<i8>>>(),
             vec![Some(1), None, Some(0), Some(0)]
         );
+
+        assert_eq!(
+            {
+                let mut itk = array.keys();
+                itk.next(); // Some(0)
+                itk.next(); // Some(0)
+                itk.next_back(); // Some(0)
+                itk.next(); // Some(0)
+                itk.next(); // None
+                itk.next_back(); // None
+                itk.next(); // None
+                itk.next().unwrap() // Some(1)
+            },
+            Some(1)
+        )
     }
 
     #[test]
