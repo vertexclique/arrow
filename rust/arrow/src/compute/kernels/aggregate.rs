@@ -131,49 +131,50 @@ where
     T: ArrowNumericType,
     T::Native: Add<Output = T::Native>,
 {
-    let null_count = array.null_count();
-
-    if null_count == array.len() {
-        return None;
-    }
-
-    let data: &[T::Native] = array.value_slice(0, array.len());
-
-    match array.data().null_buffer() {
-        None => {
-            let sum = data.iter().fold(T::default_value(), |accumulator, value| {
-                accumulator + *value
-            });
-
-            Some(sum)
-        }
-        Some(buffer) => {
-            let mut sum = T::default_value();
-            let data_chunks = data.chunks_exact(64);
-            let remainder = data_chunks.remainder();
-
-            let bit_chunks = buffer.bit_chunks(array.offset(), array.len());
-            &data_chunks
-                .zip(bit_chunks.iter())
-                .for_each(|(chunk, mask)| {
-                    chunk.iter().enumerate().for_each(|(i, value)| {
-                        if (mask & (1 << i)) != 0 {
-                            sum = sum + *value;
-                        }
-                    });
-                });
-
-            let remainder_bits = bit_chunks.remainder_bits();
-
-            remainder.iter().enumerate().for_each(|(i, value)| {
-                if remainder_bits & (1 << i) != 0 {
-                    sum = sum + *value;
-                }
-            });
-
-            Some(sum)
-        }
-    }
+    // let null_count = array.null_count();
+    //
+    // if null_count == array.len() {
+    //     return None;
+    // }
+    //
+    // let data: &[T::Native] = array.value_slice(0, array.len());
+    //
+    // match array.data().null_buffer() {
+    //     None => {
+    //         let sum = data.iter().fold(T::default_value(), |accumulator, value| {
+    //             accumulator + *value
+    //         });
+    //
+    //         Some(sum)
+    //     }
+    //     Some(buffer) => {
+    //         let mut sum = T::default_value();
+    //         let data_chunks = data.chunks_exact(64);
+    //         let remainder = data_chunks.remainder();
+    //
+    //         let bit_chunks = buffer.bit_chunks(array.offset(), array.len());
+    //         &data_chunks
+    //             .zip(bit_chunks.iter())
+    //             .for_each(|(chunk, mask)| {
+    //                 chunk.iter().enumerate().for_each(|(i, value)| {
+    //                     if (mask & (1 << i)) != 0 {
+    //                         sum = sum + *value;
+    //                     }
+    //                 });
+    //             });
+    //
+    //         let remainder_bits = bit_chunks.remainder_bits();
+    //
+    //         remainder.iter().enumerate().for_each(|(i, value)| {
+    //             if remainder_bits & (1 << i) != 0 {
+    //                 sum = sum + *value;
+    //             }
+    //         });
+    //
+    //         Some(sum)
+    //     }
+    // }
+    todo!()
 }
 
 /// Returns the sum of values in the array.

@@ -259,8 +259,8 @@ fn compare_buffer_regions(
     // for convenience, we assume that the buffer lengths are only unequal if one has padding,
     // so we take the shorter length so we can discard the padding from the longer length
     let shorter_len = left.len().min(right.len());
-    let s_sliced = left.bit_slice(left_offset, shorter_len);
-    let o_sliced = right.bit_slice(right_offset, shorter_len);
+    let s_sliced = left.bit_view(left_offset, shorter_len);
+    let o_sliced = right.bit_view(right_offset, shorter_len);
     assert_eq!(s_sliced, o_sliced);
 }
 
