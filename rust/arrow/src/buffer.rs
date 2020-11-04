@@ -263,7 +263,7 @@ impl Buffer {
     pub fn bit_view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
         self.bit_slice()
             .view(offset_in_bits, len_in_bits)
-            .into_buffer()
+            .as_buffer()
     }
 
     /// Gives bit slice of the underlying buffer

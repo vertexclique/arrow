@@ -18,10 +18,12 @@
 use crate::buffer::Buffer;
 
 use bitvec::prelude::*;
-use bitvec::slice::{ChunksExact};
+use bitvec::slice::ChunksExact;
 
 use std::fmt::Debug;
 
+///
+/// Bit slice representation of buffer data
 #[derive(Debug)]
 pub struct BufferBitSlice<'a> {
     buffer_data: &'a [u8],
@@ -29,6 +31,9 @@ pub struct BufferBitSlice<'a> {
 }
 
 impl<'a> BufferBitSlice<'a> {
+    ///
+    /// Creates a bit slice over the given data
+    #[inline]
     pub fn new(buffer_data: &'a [u8]) -> Self {
         let bit_slice = BitSlice::<LocalBits, _>::from_slice(buffer_data).unwrap();
 
@@ -38,6 +43,10 @@ impl<'a> BufferBitSlice<'a> {
         }
     }
 
+    ///
+    /// Returns immutable view with the given offset in bits and length in bits.
+    /// This view have zero-copy representation over the actual data.
+    #[inline]
     pub fn view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
         Self {
             buffer_data: self.buffer_data,
@@ -45,30 +54,43 @@ impl<'a> BufferBitSlice<'a> {
         }
     }
 
+    ///
+    /// Returns bit chunks in native 64-bit allocation size.
+    /// Native representations in Arrow follows 64-bit convention.
+    #[inline]
     pub fn chunks(&self) -> BufferBitChunksExact {
         let offset_size_in_bits = 8 * std::mem::size_of::<u64>();
-        dbg!(offset_size_in_bits);
         BufferBitChunksExact {
             chunks_exact: self.bit_slice.chunks_exact(offset_size_in_bits),
         }
     }
 
-    pub fn into_buffer(&self) -> Buffer {
+    ///
+    /// Converts the bit view into the Buffer.
+    /// Buffer is always well-aligned.
+    #[inline]
+    pub fn as_buffer(&self) -> Buffer {
         Buffer::from(self.bit_slice.as_slice())
     }
 }
 
+///
+/// Exact chunk view over the bit slice
 #[derive(Clone, Debug)]
 pub struct BufferBitChunksExact<'a> {
     chunks_exact: ChunksExact<'a, LocalBits, u8>,
 }
 
 impl<'a> BufferBitChunksExact<'a> {
+    ///
+    /// Returns remainder bit length from the exact chunk iterator
     #[inline]
     pub fn remainder_bit_len(&self) -> usize {
         self.chunks_exact.remainder().len()
     }
 
+    ///
+    /// Returns the remainder bits interpreted as given type.
     #[inline]
     pub fn remainder_bits<T>(&self) -> T
     where
@@ -82,6 +104,8 @@ impl<'a> BufferBitChunksExact<'a> {
         }
     }
 
+    ///
+    /// Interprets underlying chunk's view's bits as a given type.
     #[inline]
     pub fn interpret<T>(self) -> impl Iterator<Item = T> + 'a
     where
@@ -90,15 +114,18 @@ impl<'a> BufferBitChunksExact<'a> {
         self.chunks_exact.map(|e| e.load::<T>())
     }
 
+    ///
+    /// Returns underlying iterator as it is
     #[inline]
     pub fn iter(&self) -> &ChunksExact<'a, LocalBits, u8> {
         &self.chunks_exact
     }
 }
 
+///
+/// Implements consuming iterator for exact chunk iterator
 impl<'a> IntoIterator for BufferBitChunksExact<'a> {
     type Item = &'a BitSlice<LocalBits, u8>;
-    // type Item = u64;
     type IntoIter = ChunksExact<'a, LocalBits, u8>;
 
     fn into_iter(self) -> Self::IntoIter {
