@@ -14,44 +14,42 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 use crate::buffer::Buffer;
-use crate::util::bit_util::ceil;
-use std::fmt::Debug;
+
 use bitvec::prelude::*;
-use bitvec::slice::{Iter, ChunksExact};
-use crate::array::OffsetSizeTrait;
+use bitvec::slice::{ChunksExact};
+
+use std::fmt::Debug;
 
 #[derive(Debug)]
-pub struct BufferBitSlice<'a>
-{
+pub struct BufferBitSlice<'a> {
     buffer_data: &'a [u8],
     bit_slice: &'a BitSlice<LocalBits, u8>,
 }
 
 impl<'a> BufferBitSlice<'a> {
     pub fn new(buffer_data: &'a [u8]) -> Self {
-        let bit_slice =
-            BitSlice::<LocalBits, _>::from_slice(buffer_data).unwrap();
+        let bit_slice = BitSlice::<LocalBits, _>::from_slice(buffer_data).unwrap();
 
         BufferBitSlice {
             buffer_data,
-            bit_slice
+            bit_slice,
         }
     }
 
     pub fn view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
         Self {
             buffer_data: self.buffer_data,
-            bit_slice: &self.bit_slice[offset_in_bits..offset_in_bits+len_in_bits]
+            bit_slice: &self.bit_slice[offset_in_bits..offset_in_bits + len_in_bits],
         }
     }
 
-    pub fn chunks(&self) -> BufferBitChunksExact
-    {
+    pub fn chunks(&self) -> BufferBitChunksExact {
         let offset_size_in_bits = 8 * std::mem::size_of::<u64>();
         dbg!(offset_size_in_bits);
         BufferBitChunksExact {
-            chunks_exact: self.bit_slice.chunks_exact(offset_size_in_bits)
+            chunks_exact: self.bit_slice.chunks_exact(offset_size_in_bits),
         }
     }
 
@@ -60,15 +58,12 @@ impl<'a> BufferBitSlice<'a> {
     }
 }
 
-
-#[derive(Debug)]
-pub struct BufferBitChunksExact<'a>
-{
+#[derive(Clone, Debug)]
+pub struct BufferBitChunksExact<'a> {
     chunks_exact: ChunksExact<'a, LocalBits, u8>,
 }
 
-impl<'a> BufferBitChunksExact<'a>
-{
+impl<'a> BufferBitChunksExact<'a> {
     #[inline]
     pub fn remainder_bit_len(&self) -> usize {
         self.chunks_exact.remainder().len()
@@ -77,7 +72,7 @@ impl<'a> BufferBitChunksExact<'a>
     #[inline]
     pub fn remainder_bits<T>(&self) -> T
     where
-        T: BitMemory
+        T: BitMemory,
     {
         let remainder = self.chunks_exact.remainder();
         if remainder.len() == 0 {
@@ -88,9 +83,9 @@ impl<'a> BufferBitChunksExact<'a>
     }
 
     #[inline]
-    pub fn interpret<T>(self) -> impl Iterator<Item=T> + 'a
+    pub fn interpret<T>(self) -> impl Iterator<Item = T> + 'a
     where
-        T: BitMemory
+        T: BitMemory,
     {
         self.chunks_exact.map(|e| e.load::<T>())
     }
@@ -101,8 +96,7 @@ impl<'a> BufferBitChunksExact<'a>
     }
 }
 
-impl<'a> IntoIterator for BufferBitChunksExact<'a>
-{
+impl<'a> IntoIterator for BufferBitChunksExact<'a> {
     type Item = &'a BitSlice<LocalBits, u8>;
     // type Item = u64;
     type IntoIter = ChunksExact<'a, LocalBits, u8>;

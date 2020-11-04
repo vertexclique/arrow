@@ -37,9 +37,9 @@ use crate::memory;
 use crate::util::bit_chunk_iterator::*;
 use crate::util::bit_util;
 use crate::util::bit_util::ceil;
+
 #[cfg(feature = "simd")]
 use std::borrow::BorrowMut;
-use std::borrow::Borrow;
 
 /// Buffer is a contiguous memory region of fixed size and is aligned at a 64-byte
 /// boundary. Buffer is immutable.
@@ -261,7 +261,9 @@ impl Buffer {
     /// If the offset is byte-aligned the returned buffer is a shallow clone,
     /// otherwise a new buffer is allocated and filled with a copy of the bits in the range.
     pub fn bit_view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
-        self.bit_slice().view(offset_in_bits, len_in_bits).into_buffer()
+        self.bit_slice()
+            .view(offset_in_bits, len_in_bits)
+            .into_buffer()
     }
 
     /// Gives bit slice of the underlying buffer
@@ -397,36 +399,39 @@ fn bitwise_bin_op_helper<F>(
 where
     F: Fn(u64, u64) -> u64,
 {
-    // // reserve capacity and set length so we can get a typed view of u64 chunks
-    // let mut result =
-    //     MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
-    //
-    // // let left_chunks = left.bit_chunks(left_offset_in_bits, len_in_bits);
-    // let left_slice = left.bit_slice().view(left_offset_in_bits, len_in_bits);
-    // let left_chunks = left_slice.chunks();
-    // let left_chunk_iter = left_chunks.interpret::<u64>();
-    // // let right_chunks = right.bit_chunks(right_offset_in_bits, len_in_bits);
-    // let right_slice = right.bit_slice().view(right_offset_in_bits, len_in_bits);
-    // let right_chunks = right_slice.chunks();
-    // let right_chunk_iter = right_chunks.interpret::<u64>();
-    //
-    // let result_chunks = result.typed_data_mut::<u64>().iter_mut();
-    //
-    // result_chunks
-    //     .zip(left_chunk_iter.zip(right_chunk_iter))
-    //     .for_each(|(res, (left, right))| {
-    //         *res = op(left, right);
-    //     });
-    //
-    // let remainder_bytes = ceil(left_chunks.remainder_bit_len(), 8);
-    // let rem = op(left_chunks.remainder_bits::<u64>(), right_chunks.remainder_bits::<u64>());
-    // let rem = &rem.to_le_bytes()[0..remainder_bytes];
-    // result
-    //     .write_all(rem)
-    //     .expect("not enough capacity in buffer");
-    //
-    // result.freeze()
-    todo!()
+    // reserve capacity and set length so we can get a typed view of u64 chunks
+    let mut result =
+        MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
+
+    let left_slice = left.bit_slice().view(left_offset_in_bits, len_in_bits);
+    let left_chunks = left_slice.chunks();
+
+    let right_slice = right.bit_slice().view(right_offset_in_bits, len_in_bits);
+    let right_chunks = right_slice.chunks();
+
+    let remainder_bytes = ceil(left_chunks.remainder_bit_len(), 8);
+    let rem = op(
+        left_chunks.remainder_bits::<u64>(),
+        right_chunks.remainder_bits::<u64>(),
+    );
+    let rem = &rem.to_ne_bytes()[0..remainder_bytes];
+
+    let left_chunk_iter = left_chunks.interpret::<u64>();
+    let right_chunk_iter = right_chunks.interpret::<u64>();
+
+    let result_chunks = result.typed_data_mut::<u64>().iter_mut();
+
+    result_chunks
+        .zip(left_chunk_iter.zip(right_chunk_iter))
+        .for_each(|(res, (left, right))| {
+            *res = op(left, right);
+        });
+
+    result
+        .write_all(rem)
+        .expect("not enough capacity in buffer");
+
+    result.freeze()
 }
 
 /// Apply a bitwise operation `op` to one input and return the result as a Buffer.
@@ -441,27 +446,29 @@ where
     F: Fn(u64) -> u64,
 {
     // reserve capacity and set length so we can get a typed view of u64 chunks
-    // let mut result =
-    //     MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
-    //
-    // let left_chunks = left.bit_chunks(offset_in_bits, len_in_bits);
-    // let result_chunks = result.typed_data_mut::<u64>().iter_mut();
-    //
-    // result_chunks
-    //     .zip(left_chunks.iter())
-    //     .for_each(|(res, left)| {
-    //         *res = op(left);
-    //     });
-    //
-    // let remainder_bytes = ceil(left_chunks.remainder_len(), 8);
-    // let rem = op(left_chunks.remainder_bits());
-    // let rem = &rem.to_le_bytes()[0..remainder_bytes];
-    // result
-    //     .write_all(rem)
-    //     .expect("not enough capacity in buffer");
-    //
-    // result.freeze()
-    todo!()
+    let mut result =
+        MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
+
+    let left_slice = left.bit_slice().view(offset_in_bits, len_in_bits);
+    let left_chunks = left_slice.chunks();
+
+    let remainder_bytes = ceil(left_chunks.remainder_bit_len(), 8);
+    let rem = op(left_chunks.remainder_bits());
+    let rem = &rem.to_ne_bytes()[0..remainder_bytes];
+
+    let left_chunk_iter = left_chunks.interpret::<u64>();
+
+    let result_chunks = result.typed_data_mut::<u64>().iter_mut();
+
+    result_chunks.zip(left_chunk_iter).for_each(|(res, left)| {
+        *res = op(left);
+    });
+
+    result
+        .write_all(rem)
+        .expect("not enough capacity in buffer");
+
+    result.freeze()
 }
 
 pub(super) fn buffer_bin_and(
