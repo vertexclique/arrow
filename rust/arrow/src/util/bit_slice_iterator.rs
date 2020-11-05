@@ -22,12 +22,16 @@ use bitvec::slice::ChunksExact;
 
 use std::fmt::Debug;
 
+use std::ops::Range;
+
+
 ///
 /// Bit slice representation of buffer data
 #[derive(Debug)]
 pub struct BufferBitSlice<'a> {
     buffer_data: &'a [u8],
     bit_slice: &'a BitSlice<LocalBits, u8>,
+    view_range: Range<usize>,
 }
 
 impl<'a> BufferBitSlice<'a> {
@@ -40,6 +44,7 @@ impl<'a> BufferBitSlice<'a> {
         BufferBitSlice {
             buffer_data,
             bit_slice,
+            view_range: (0..buffer_data.len()),
         }
     }
 
@@ -51,6 +56,7 @@ impl<'a> BufferBitSlice<'a> {
         Self {
             buffer_data: self.buffer_data,
             bit_slice: &self.bit_slice[offset_in_bits..offset_in_bits + len_in_bits],
+            view_range: (offset_in_bits..offset_in_bits + len_in_bits),
         }
     }
 
@@ -67,7 +73,7 @@ impl<'a> BufferBitSlice<'a> {
 
     ///
     /// Converts the bit view into the Buffer.
-    /// Buffer is always well-aligned.
+    /// Buffer is always byte-aligned and well-aligned.
     #[inline]
     pub fn as_buffer(&self) -> Buffer {
         Buffer::from(self.bit_slice.as_slice())

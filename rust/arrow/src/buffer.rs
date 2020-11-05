@@ -34,7 +34,7 @@ use std::sync::Arc;
 use crate::datatypes::ArrowNativeType;
 use crate::error::{ArrowError, Result};
 use crate::memory;
-use crate::util::bit_chunk_iterator::*;
+use crate::util::bit_slice_iterator::*;
 use crate::util::bit_util;
 use crate::util::bit_util::ceil;
 
@@ -261,9 +261,13 @@ impl Buffer {
     /// If the offset is byte-aligned the returned buffer is a shallow clone,
     /// otherwise a new buffer is allocated and filled with a copy of the bits in the range.
     pub fn bit_view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
-        self.bit_slice()
-            .view(offset_in_bits, len_in_bits)
-            .as_buffer()
+        if offset_in_bits % 8 == 0 && len_in_bits % 8 == 0 {
+            self.slice(offset_in_bits / 8)
+        } else {
+            self.bit_slice()
+                .view(offset_in_bits, len_in_bits)
+                .as_buffer()
+        }
     }
 
     /// Gives bit slice of the underlying buffer
