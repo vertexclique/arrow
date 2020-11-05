@@ -64,10 +64,22 @@ impl<'a> BufferBitSlice<'a> {
     /// Returns bit chunks in native 64-bit allocation size.
     /// Native representations in Arrow follows 64-bit convention.
     #[inline]
-    pub fn chunks(&self) -> BufferBitChunksExact {
+    pub fn chunks<T>(&self) -> BufferBitChunksExact<T>
+    where
+        T: BitMemory
+    {
         let offset_size_in_bits = 8 * std::mem::size_of::<u64>();
+        let chunks_exact = self.bit_slice.chunks_exact(offset_size_in_bits);
+        let remainder_bits = chunks_exact.remainder();
+        let remainder: T = if remainder_bits.len() == 0 {
+            T::default()
+        } else {
+            remainder_bits.load::<T>()
+        };
         BufferBitChunksExact {
-            chunks_exact: self.bit_slice.chunks_exact(offset_size_in_bits),
+            chunks_exact,
+            remainder,
+            remainder_len_in_bits: remainder_bits.len()
         }
     }
 
@@ -83,37 +95,38 @@ impl<'a> BufferBitSlice<'a> {
 ///
 /// Exact chunk view over the bit slice
 #[derive(Clone, Debug)]
-pub struct BufferBitChunksExact<'a> {
+pub struct BufferBitChunksExact<'a, T>
+where
+    T: BitMemory
+{
     chunks_exact: ChunksExact<'a, LocalBits, u8>,
+    remainder: T,
+    remainder_len_in_bits: usize,
 }
 
-impl<'a> BufferBitChunksExact<'a> {
+impl<'a, T> BufferBitChunksExact<'a, T>
+where
+    T: BitMemory
+{
     ///
     /// Returns remainder bit length from the exact chunk iterator
     #[inline]
     pub fn remainder_bit_len(&self) -> usize {
-        self.chunks_exact.remainder().len()
+        self.remainder_len_in_bits
     }
 
     ///
     /// Returns the remainder bits interpreted as given type.
     #[inline]
-    pub fn remainder_bits<T>(&self) -> T
-    where
-        T: BitMemory,
+    pub fn remainder_bits(&self) -> T
     {
-        let remainder = self.chunks_exact.remainder();
-        if remainder.len() == 0 {
-            T::default()
-        } else {
-            self.chunks_exact.remainder().load::<T>()
-        }
+        self.remainder
     }
 
     ///
     /// Interprets underlying chunk's view's bits as a given type.
     #[inline]
-    pub fn interpret<T>(self) -> impl Iterator<Item = T> + 'a
+    pub fn interpret(self) -> impl Iterator<Item = T> + 'a
     where
         T: BitMemory,
     {
@@ -130,7 +143,10 @@ impl<'a> BufferBitChunksExact<'a> {
 
 ///
 /// Implements consuming iterator for exact chunk iterator
-impl<'a> IntoIterator for BufferBitChunksExact<'a> {
+impl<'a, T> IntoIterator for BufferBitChunksExact<'a, T>
+where
+    T: BitMemory
+{
     type Item = &'a BitSlice<LocalBits, u8>;
     type IntoIter = ChunksExact<'a, LocalBits, u8>;
 
@@ -163,10 +179,10 @@ mod tests {
         let buffer: Buffer = Buffer::from(input);
 
         let bit_slice = buffer.bit_slice().view(4, 64);
-        let chunks = bit_slice.chunks();
+        let chunks = bit_slice.chunks::<u64>();
 
         assert_eq!(0, chunks.remainder_bit_len());
-        assert_eq!(0, chunks.remainder_bits::<u64>());
+        assert_eq!(0, chunks.remainder_bits());
 
         let result = chunks.interpret().collect::<Vec<u64>>();
 
@@ -186,10 +202,10 @@ mod tests {
         let buffer: Buffer = Buffer::from(input);
 
         let bit_slice = buffer.bit_slice().view(4, 66);
-        let chunks = bit_slice.chunks();
+        let chunks = bit_slice.chunks::<u64>();
 
         assert_eq!(2, chunks.remainder_bit_len());
-        assert_eq!(0b00000011, chunks.remainder_bits::<u64>());
+        assert_eq!(0b00000011, chunks.remainder_bits());
 
         let result = chunks.interpret().collect::<Vec<u64>>();
 

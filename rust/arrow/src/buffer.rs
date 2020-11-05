@@ -408,20 +408,20 @@ where
         MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
 
     let left_slice = left.bit_slice().view(left_offset_in_bits, len_in_bits);
-    let left_chunks = left_slice.chunks();
+    let left_chunks = left_slice.chunks::<u64>();
 
     let right_slice = right.bit_slice().view(right_offset_in_bits, len_in_bits);
-    let right_chunks = right_slice.chunks();
+    let right_chunks = right_slice.chunks::<u64>();
 
     let remainder_bytes = ceil(left_chunks.remainder_bit_len(), 8);
     let rem = op(
-        left_chunks.remainder_bits::<u64>(),
-        right_chunks.remainder_bits::<u64>(),
+        left_chunks.remainder_bits(),
+        right_chunks.remainder_bits(),
     );
     let rem = &rem.to_ne_bytes()[0..remainder_bytes];
 
-    let left_chunk_iter = left_chunks.interpret::<u64>();
-    let right_chunk_iter = right_chunks.interpret::<u64>();
+    let left_chunk_iter = left_chunks.interpret();
+    let right_chunk_iter = right_chunks.interpret();
 
     let result_chunks = result.typed_data_mut::<u64>().iter_mut();
 
@@ -454,13 +454,13 @@ where
         MutableBuffer::new(ceil(len_in_bits, 8)).with_bitset(len_in_bits / 64 * 8, false);
 
     let left_slice = left.bit_slice().view(offset_in_bits, len_in_bits);
-    let left_chunks = left_slice.chunks();
+    let left_chunks = left_slice.chunks::<u64>();
 
     let remainder_bytes = ceil(left_chunks.remainder_bit_len(), 8);
     let rem = op(left_chunks.remainder_bits());
     let rem = &rem.to_ne_bytes()[0..remainder_bytes];
 
-    let left_chunk_iter = left_chunks.interpret::<u64>();
+    let left_chunk_iter = left_chunks.interpret();
 
     let result_chunks = result.typed_data_mut::<u64>().iter_mut();
 

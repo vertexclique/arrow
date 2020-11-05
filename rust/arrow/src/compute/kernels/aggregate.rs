@@ -153,11 +153,11 @@ where
             let remainder = data_chunks.remainder();
 
             let buffer_slice = buffer.bit_slice().view(array.offset(), array.len());
-            let buffer_chunks = buffer_slice.chunks();
+            let buffer_chunks = buffer_slice.chunks::<u64>();
 
             let buffer_remainder_bits: u64 = buffer_chunks.remainder_bits();
 
-            let buffer_chunk_iter = buffer_chunks.interpret::<u64>();
+            let buffer_chunk_iter = buffer_chunks.interpret();
 
             remainder.iter().enumerate().for_each(|(i, value)| {
                 if buffer_remainder_bits & (1 << i) != 0 {
