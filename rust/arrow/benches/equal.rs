@@ -19,27 +19,23 @@
 extern crate criterion;
 use criterion::Criterion;
 
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 use std::sync::Arc;
 
 extern crate arrow;
 
 use arrow::array::*;
+use arrow::util::test_util::{random_float, random_string};
+use bastion_utils::math::random;
 
 fn create_string_array(size: usize, with_nulls: bool) -> ArrayRef {
     // use random numbers to avoid spurious compiler optimizations wrt to branching
-    let mut rng = rand::thread_rng();
     let mut builder = StringBuilder::new(size);
 
     for _ in 0..size {
-        if with_nulls && rng.gen::<f32>() > 0.5 {
+        if with_nulls && random(100) > 50 {
             builder.append_null().unwrap();
         } else {
-            let string = rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(10)
-                .collect::<String>();
+            let string = random_string(10);
             builder.append_value(&string).unwrap();
         }
     }
@@ -48,14 +44,14 @@ fn create_string_array(size: usize, with_nulls: bool) -> ArrayRef {
 
 fn create_array(size: usize, with_nulls: bool) -> ArrayRef {
     // use random numbers to avoid spurious compiler optimizations wrt to branching
-    let mut rng = rand::thread_rng();
+
     let mut builder = Float32Builder::new(size);
 
     for _ in 0..size {
-        if with_nulls && rng.gen::<f32>() > 0.5 {
+        if with_nulls && random(100) > 50 {
             builder.append_null().unwrap();
         } else {
-            builder.append_value(rng.gen()).unwrap();
+            builder.append_value(random_float()).unwrap();
         }
     }
     Arc::new(builder.finish())

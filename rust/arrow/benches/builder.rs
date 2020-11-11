@@ -22,10 +22,9 @@ extern crate rand;
 use std::mem::size_of;
 
 use criterion::*;
-use rand::distributions::Standard;
-use rand::{thread_rng, Rng};
 
 use arrow::array::*;
+use arrow::util::test_util::random_bools;
 
 // Build arrays with 512k elements.
 const BATCH_SIZE: usize = 8 << 10;
@@ -51,10 +50,8 @@ fn bench_primitive(c: &mut Criterion) {
 }
 
 fn bench_bool(c: &mut Criterion) {
-    let data: Vec<bool> = thread_rng()
-        .sample_iter(&Standard)
-        .take(BATCH_SIZE)
-        .collect();
+    // TODO: Fix bool generation.
+    let data: Vec<bool> = random_bools(BATCH_SIZE, 0.5);
     let data_len = data.len();
     c.bench(
         "bench_bool",

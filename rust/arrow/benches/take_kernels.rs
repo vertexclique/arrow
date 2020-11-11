@@ -19,9 +19,8 @@
 extern crate criterion;
 use criterion::Criterion;
 
-use rand::distributions::{Alphanumeric, Distribution, Standard};
-use rand::prelude::random;
-use rand::Rng;
+use bastion_utils::math::random;
+use rand::distributions::{Distribution, Standard};
 
 use std::sync::Arc;
 
@@ -30,6 +29,7 @@ extern crate arrow;
 use arrow::array::*;
 use arrow::compute::{cast, take};
 use arrow::datatypes::*;
+use arrow::util::test_util::{random_bools, random_string};
 
 // cast array from specified primitive array type to desired data type
 fn create_numeric<T>(size: usize) -> ArrayRef
@@ -38,18 +38,15 @@ where
     Standard: Distribution<T::Native>,
     PrimitiveArray<T>: std::convert::From<Vec<T::Native>>,
 {
-    Arc::new(PrimitiveArray::<T>::from(vec![random::<T::Native>(); size])) as ArrayRef
+    let data = (0..size)
+        .into_iter()
+        .flat_map(|_| T::Native::from_usize(random(size as _) as usize))
+        .collect();
+    Arc::new(PrimitiveArray::<T>::from(data)) as ArrayRef
 }
 
 fn create_strings(size: usize) -> ArrayRef {
-    let v = (0..size)
-        .map(|_| {
-            rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(5)
-                .collect::<String>()
-        })
-        .collect::<Vec<_>>();
+    let v = (0..size).map(|_| random_string(5)).collect::<Vec<_>>();
 
     Arc::new(StringArray::from(
         v.iter().map(|x| &**x).collect::<Vec<&str>>(),
@@ -57,8 +54,11 @@ fn create_strings(size: usize) -> ArrayRef {
 }
 
 fn create_random_index(size: usize) -> UInt32Array {
-    let mut rng = rand::thread_rng();
-    let ints = Int32Array::from(vec![rng.gen_range(-24i32, size as i32); size]);
+    let data: Vec<i32> = (0..size)
+        .into_iter()
+        .map(|_| random(size as _) as i32)
+        .collect();
+    let ints = Int32Array::from(data);
     // cast to u32, conveniently marking negative values as nulls
     UInt32Array::from(
         cast(&(Arc::new(ints) as ArrayRef), &DataType::UInt32)
@@ -81,13 +81,13 @@ fn add_benchmark(c: &mut Criterion) {
         b.iter(|| bench_take(&values, &indices))
     });
 
-    let values = Arc::new(BooleanArray::from(vec![random::<bool>(); 512])) as ArrayRef;
+    let values = Arc::new(BooleanArray::from(random_bools(512, 0.5))) as ArrayRef;
     let indices = create_random_index(512);
     c.bench_function("take bool 512", |b| {
         b.iter(|| bench_take(&values, &indices))
     });
 
-    let values = Arc::new(BooleanArray::from(vec![random::<bool>(); 1024])) as ArrayRef;
+    let values = Arc::new(BooleanArray::from(random_bools(1024, 0.5))) as ArrayRef;
     let indices = create_random_index(1024);
     c.bench_function("take bool 1024", |b| {
         b.iter(|| bench_take(&values, &indices))

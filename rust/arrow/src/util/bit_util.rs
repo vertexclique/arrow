@@ -199,10 +199,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::{thread_rng, Rng};
     use std::collections::HashSet;
 
     use super::*;
+    use crate::util::test_util::{random_bool, random_in_range};
+    use bastion_utils::math::random;
 
     #[test]
     fn test_round_upto_multiple_of_64() {
@@ -246,9 +247,9 @@ mod tests {
         const NUM_BYTE: usize = 10;
         let mut buf = vec![0; NUM_BYTE];
         let mut expected = vec![];
-        let mut rng = thread_rng();
         for i in 0..8 * NUM_BYTE {
-            let b = rng.gen_bool(0.5);
+            // TODO: Fix generating bool with consistent view
+            let b = random_bool(0.5);
             expected.push(b);
             if b {
                 set_bit(&mut buf[..], i)
@@ -290,9 +291,8 @@ mod tests {
         const NUM_BYTE: usize = 10;
         let mut buf = vec![0; NUM_BYTE];
         let mut expected = vec![];
-        let mut rng = thread_rng();
         for i in 0..8 * NUM_BYTE {
-            let b = rng.gen_bool(0.5);
+            let b = random_bool(0.5);
             expected.push(b);
             if b {
                 unsafe {
@@ -314,9 +314,8 @@ mod tests {
         const NUM_BYTE: usize = 10;
         let mut buf = vec![255; NUM_BYTE];
         let mut expected = vec![];
-        let mut rng = thread_rng();
         for i in 0..8 * NUM_BYTE {
-            let b = rng.gen_bool(0.5);
+            let b = random_bool(0.5);
             expected.push(b);
             if !b {
                 unsafe {
@@ -343,11 +342,9 @@ mod tests {
         let mut expected = Vec::with_capacity(NUM_BYTE * 8);
         expected.resize(NUM_BYTE * 8, false);
 
-        let mut rng = thread_rng();
-
         for _ in 0..NUM_BLOCKS {
-            let start = rng.gen_range(0, NUM_BYTE * 8 - MAX_BLOCK_SIZE);
-            let end = start + rng.gen_range(1, MAX_BLOCK_SIZE);
+            let start = random_in_range(0, NUM_BYTE * 8 - MAX_BLOCK_SIZE);
+            let end = start + random_in_range(1, MAX_BLOCK_SIZE);
             unsafe {
                 set_bits_raw(buf.as_mut_ptr(), start, end);
             }
@@ -371,9 +368,8 @@ mod tests {
 
         let mut buffer: [u8; NUM_BYTES * 8] = [0; NUM_BYTES * 8];
         let mut v = HashSet::new();
-        let mut rng = thread_rng();
         for _ in 0..NUM_SETS {
-            let offset = rng.gen_range(0, 8 * NUM_BYTES);
+            let offset = random(8 * NUM_BYTES as u32) as usize;
             v.insert(offset);
             set_bit(&mut buffer[..], offset);
         }

@@ -19,24 +19,24 @@
 extern crate criterion;
 use criterion::Criterion;
 
-use rand::Rng;
 use std::sync::Arc;
 
 extern crate arrow;
 
 use arrow::array::*;
 use arrow::compute::kernels::sort::{lexsort, SortColumn};
+use arrow::util::test_util::random_float;
+use bastion_utils::math::random;
 
 fn create_array(size: usize, with_nulls: bool) -> ArrayRef {
     // use random numbers to avoid spurious compiler optimizations wrt to branching
-    let mut rng = rand::thread_rng();
     let mut builder = Float32Builder::new(size);
 
     for _ in 0..size {
-        if with_nulls && rng.gen::<f32>() > 0.5 {
+        if with_nulls && random(100) > 50 {
             builder.append_null().unwrap();
         } else {
-            builder.append_value(rng.gen()).unwrap();
+            builder.append_value(random_float()).unwrap();
         }
     }
     Arc::new(builder.finish())
