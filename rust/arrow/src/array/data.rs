@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use crate::buffer::Buffer;
 use crate::datatypes::DataType;
-use crate::util::bit_util;
+use crate::util::utils;
 use crate::{bitmap::Bitmap, datatypes::ArrowNativeType};
 
 use super::equal::equal;
@@ -31,7 +31,8 @@ use super::equal::equal;
 #[inline]
 fn count_nulls(null_bit_buffer: Option<&Buffer>, offset: usize, len: usize) -> usize {
     if let Some(ref buf) = null_bit_buffer {
-        len.checked_sub(bit_util::count_set_bits_offset(buf.data(), offset, len))
+        let ones = buf.bit_slice().view(offset, len).count_ones();
+        len.checked_sub(ones)
             .unwrap()
     } else {
         0
@@ -342,7 +343,8 @@ mod tests {
 
     use crate::buffer::Buffer;
     use crate::datatypes::ToByteSlice;
-    use crate::util::bit_util;
+    use crate::util::utils;
+    use crate::util::bit_slice_iterator::BufferBitSliceMut;
 
     #[test]
     fn test_new() {
@@ -388,9 +390,10 @@ mod tests {
     #[test]
     fn test_null_count() {
         let mut bit_v: [u8; 2] = [0; 2];
-        bit_util::set_bit(&mut bit_v, 0);
-        bit_util::set_bit(&mut bit_v, 3);
-        bit_util::set_bit(&mut bit_v, 10);
+        let mut bit_v_slice = BufferBitSliceMut::new(&mut bit_v);
+        bit_v_slice.set_bit(0, true);
+        bit_v_slice.set_bit(3, true);
+        bit_v_slice.set_bit(10, true);
         let arr_data = ArrayData::builder(DataType::Int32)
             .len(16)
             .null_bit_buffer(Buffer::from(bit_v))
@@ -399,9 +402,10 @@ mod tests {
 
         // Test with offset
         let mut bit_v: [u8; 2] = [0; 2];
-        bit_util::set_bit(&mut bit_v, 0);
-        bit_util::set_bit(&mut bit_v, 3);
-        bit_util::set_bit(&mut bit_v, 10);
+        let mut bit_v_slice = BufferBitSliceMut::new(&mut bit_v);
+        bit_v_slice.set_bit(0, true);
+        bit_v_slice.set_bit(3, true);
+        bit_v_slice.set_bit(10, true);
         let arr_data = ArrayData::builder(DataType::Int32)
             .len(12)
             .offset(2)
@@ -413,9 +417,10 @@ mod tests {
     #[test]
     fn test_null_buffer_ref() {
         let mut bit_v: [u8; 2] = [0; 2];
-        bit_util::set_bit(&mut bit_v, 0);
-        bit_util::set_bit(&mut bit_v, 3);
-        bit_util::set_bit(&mut bit_v, 10);
+        let mut bit_v_slice = BufferBitSliceMut::new(&mut bit_v);
+        bit_v_slice.set_bit(0, true);
+        bit_v_slice.set_bit(3, true);
+        bit_v_slice.set_bit(10, true);
         let arr_data = ArrayData::builder(DataType::Int32)
             .len(16)
             .null_bit_buffer(Buffer::from(bit_v))
@@ -427,9 +432,10 @@ mod tests {
     #[test]
     fn test_slice() {
         let mut bit_v: [u8; 2] = [0; 2];
-        bit_util::set_bit(&mut bit_v, 0);
-        bit_util::set_bit(&mut bit_v, 3);
-        bit_util::set_bit(&mut bit_v, 10);
+        let mut bit_v_slice = BufferBitSliceMut::new(&mut bit_v);
+        bit_v_slice.set_bit(0, true);
+        bit_v_slice.set_bit(3, true);
+        bit_v_slice.set_bit(10, true);
         let data = ArrayData::builder(DataType::Int32)
             .len(16)
             .null_bit_buffer(Buffer::from(bit_v))

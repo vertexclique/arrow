@@ -21,10 +21,12 @@ use bitvec::prelude::*;
 use bitvec::slice::ChunksExact;
 
 use std::fmt::Debug;
+use std::convert::identity;
+use std::borrow::BorrowMut;
 
 ///
-/// Bit slice representation of buffer data
-#[derive(Debug)]
+/// Immutable bit slice representation of buffer data
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct BufferBitSlice<'a> {
     buffer_data: &'a [u8],
     bit_slice: &'a BitSlice<LocalBits, u8>,
@@ -32,14 +34,14 @@ pub struct BufferBitSlice<'a> {
 
 impl<'a> BufferBitSlice<'a> {
     ///
-    /// Creates a bit slice over the given data
+    /// Creates a immutable bit slice over the given data
     #[inline]
     pub fn new(buffer_data: &'a [u8]) -> Self {
         let bit_slice = BitSlice::<LocalBits, _>::from_slice(buffer_data).unwrap();
 
         BufferBitSlice {
             buffer_data,
-            bit_slice,
+            bit_slice: &bit_slice,
         }
     }
 
@@ -84,6 +86,144 @@ impl<'a> BufferBitSlice<'a> {
     #[inline]
     pub fn as_buffer(&self) -> Buffer {
         Buffer::from(self.bit_slice.as_slice())
+    }
+
+    ///
+    /// Count ones in the given bit view
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.bit_slice.count_ones()
+    }
+
+    ///
+    /// Count zeros in the given bit view
+    #[inline]
+    pub fn count_zeros(&self) -> usize {
+        self.bit_slice.count_zeros()
+    }
+
+    ///
+    /// Get bit value at the given index in this bit view
+    #[inline]
+    pub fn get_bit(&self, index: usize) -> bool {
+        *unsafe { self.bit_slice.get_unchecked(index) }
+    }
+
+    ///
+    /// Get bits in this view as vector of booleans
+    #[inline]
+    pub fn typed_bits(&self) -> Vec<bool> {
+        self.bit_slice.iter().map(|e| *e).collect()
+    }
+
+    ///
+    /// Get manipulated data as byte slice
+    #[inline]
+    pub fn to_slice(&self) -> &[u8] {
+        self.bit_slice.as_slice()
+    }
+}
+
+///
+/// Conversion from mutable slice to immutable bit slice
+impl<'a> From<&'a [u8]> for BufferBitSlice<'a> {
+    fn from(data: &'a [u8]) -> Self {
+        BufferBitSlice::new(data)
+    }
+}
+
+///
+/// Mutable bit slice representation of buffer data
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub struct BufferBitSliceMut<'a> {
+    bit_slice: &'a mut BitSlice<LocalBits, u8>,
+}
+
+impl<'a> BufferBitSliceMut<'a> {
+    ///
+    /// Creates a mutable bit slice over the given data
+    #[inline]
+    pub fn new(buffer_data: &'a mut [u8]) -> Self {
+        let mut bit_slice = BitSlice::<LocalBits, _>::from_slice_mut(buffer_data).unwrap();
+
+        BufferBitSliceMut {
+            bit_slice,
+        }
+    }
+
+    ///
+    /// Returns mutable view with the given offset in bits and length in bits.
+    /// This view have zero-copy representation over the actual data.
+    #[inline(always)]
+    pub fn view(&'a mut self, offset_in_bits: usize, len_in_bits: usize) -> Self {
+        Self {
+            bit_slice: &mut self.bit_slice[offset_in_bits..offset_in_bits + len_in_bits],
+        }
+    }
+
+    ///
+    /// Set given bit at the position to a given value
+    #[inline]
+    pub fn set_bit_all(&mut self, value: bool) {
+        self.bit_slice.set_all(value)
+    }
+
+    ///
+    /// Count zeros in the given bit view
+    #[inline]
+    pub fn set_bit(&mut self, index: usize, value: bool) {
+        unsafe { self.bit_slice.set_unchecked(index, value) }
+    }
+
+    ///
+    /// Converts the bit view into the Buffer.
+    /// Buffer is always byte-aligned and well-aligned.
+    #[inline]
+    pub fn as_buffer(&self) -> Buffer {
+        Buffer::from(self.bit_slice.as_slice())
+    }
+
+    ///
+    /// Count ones in the given bit view
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.bit_slice.count_ones()
+    }
+
+    ///
+    /// Count zeros in the given bit view
+    #[inline]
+    pub fn count_zeros(&self) -> usize {
+        self.bit_slice.count_zeros()
+    }
+
+    ///
+    /// Get bit value at the given index in this bit view
+    #[inline]
+    pub fn get_bit(&self, index: usize) -> bool {
+        *unsafe { self.bit_slice.get_unchecked(index) }
+    }
+
+    ///
+    /// Get bits in this view as vector of booleans
+    #[inline]
+    pub fn typed_bits(&self) -> Vec<bool> {
+        self.bit_slice.iter().map(|e| *e).collect()
+    }
+
+    ///
+    /// Get manipulated data as byte slice
+    #[inline]
+    pub fn to_slice(&self) -> &[u8] {
+        self.bit_slice.as_slice()
+    }
+}
+
+///
+/// Conversion from mutable slice to mutable bit slice
+impl<'a> From<&'a mut [u8]> for BufferBitSliceMut<'a> {
+    fn from(data: &'a mut [u8]) -> Self {
+        BufferBitSliceMut::new(data)
     }
 }
 

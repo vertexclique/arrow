@@ -31,7 +31,7 @@ use crate::buffer::{
 use crate::compute::util::combine_option_bitmap;
 use crate::datatypes::DataType;
 use crate::error::{ArrowError, Result};
-use crate::util::bit_util::ceil;
+use crate::util::utils::ceil;
 
 /// Helper function to implement binary kernels
 fn binary_boolean_kernel<F>(

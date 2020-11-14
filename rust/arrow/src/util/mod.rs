@@ -16,7 +16,7 @@
 // under the License.
 
 pub mod bit_slice_iterator;
-pub mod bit_util;
+pub mod utils;
 pub mod buffered_iterator;
 pub mod display;
 pub mod integration_util;

@@ -20,7 +20,7 @@
 
 use crate::buffer::Buffer;
 use crate::error::Result;
-use crate::util::bit_util;
+use crate::util::utils;
 use std::mem;
 
 use std::ops::{BitAnd, BitOr};
@@ -53,8 +53,8 @@ impl Bitmap {
     }
 
     pub fn is_set(&self, i: usize) -> bool {
-        assert!(i < (self.bits.len() << 3));
-        unsafe { bit_util::get_bit_raw(self.bits.raw_data(), i) }
+        // assert!(i < (self.bits.len() << 3));
+        self.bits.get_bit(i)
     }
 
     pub fn buffer_ref(&self) -> &Buffer {

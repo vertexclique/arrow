@@ -37,9 +37,10 @@ mod tests {
     use crate::array::*;
     use crate::buffer::Buffer;
     use crate::datatypes::{DataType, Field, ToByteSlice};
-    use crate::util::bit_util;
+    use crate::util::utils;
 
     use std::sync::Arc;
+    use crate::util::bit_slice_iterator::BufferBitSliceMut;
 
     #[test]
     fn test_limit_array() {
@@ -103,11 +104,12 @@ mod tests {
             Buffer::from(&[0, 2, 2, 4, 4, 6, 6, 9, 9, 10].to_byte_slice());
         // 01010101 00000001
         let mut null_bits: [u8; 2] = [0; 2];
-        bit_util::set_bit(&mut null_bits, 0);
-        bit_util::set_bit(&mut null_bits, 2);
-        bit_util::set_bit(&mut null_bits, 4);
-        bit_util::set_bit(&mut null_bits, 6);
-        bit_util::set_bit(&mut null_bits, 8);
+        let mut null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
+        null_bit_slice.set_bit(0, true);
+        null_bit_slice.set_bit(2, true);
+        null_bit_slice.set_bit(4, true);
+        null_bit_slice.set_bit(6, true);
+        null_bit_slice.set_bit(8, true);
 
         // Construct a list array from the above two
         let list_data_type =

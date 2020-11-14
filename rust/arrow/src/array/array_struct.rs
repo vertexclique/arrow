@@ -29,7 +29,7 @@ use crate::{
 };
 use crate::{
     error::{ArrowError, Result},
-    util::bit_util,
+    util::utils,
 };
 
 /// A nested array type where each child (called *field*) is represented by a separate
@@ -149,7 +149,7 @@ impl TryFrom<Vec<(&str, ArrayRef)>> for StructArray {
             .len(len)
             .child_data(child_data);
         if let Some(null_buffer) = null {
-            let null_count = len - bit_util::count_set_bits(null_buffer.data());
+            let null_count = len - null_buffer.count_ones();
             builder = builder.null_count(null_count).null_bit_buffer(null_buffer);
         }
 
