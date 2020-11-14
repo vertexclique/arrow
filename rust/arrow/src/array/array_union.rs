@@ -232,7 +232,7 @@ impl UnionArray {
         assert!(index - self.offset() < self.len());
         if self.is_dense() {
             let valid_slots = match self.data.null_buffer() {
-                Some(b) => b.bit_view(0, index).count_ones(),
+                Some(b) => b.bit_slice().view(0, index).count_ones(),
                 None => index,
             };
             self.data().buffers()[1].data()[valid_slots * size_of::<i32>()] as i32

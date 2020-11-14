@@ -26,7 +26,7 @@ use std::borrow::BorrowMut;
 
 ///
 /// Immutable bit slice representation of buffer data
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct BufferBitSlice<'a> {
     buffer_data: &'a [u8],
     bit_slice: &'a BitSlice<LocalBits, u8>,
@@ -124,6 +124,12 @@ impl<'a> BufferBitSlice<'a> {
     }
 }
 
+impl<'a> PartialEq for BufferBitSlice<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.bit_slice == other.bit_slice
+    }
+}
+
 ///
 /// Conversion from mutable slice to immutable bit slice
 impl<'a> From<&'a [u8]> for BufferBitSlice<'a> {
@@ -134,7 +140,7 @@ impl<'a> From<&'a [u8]> for BufferBitSlice<'a> {
 
 ///
 /// Mutable bit slice representation of buffer data
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct BufferBitSliceMut<'a> {
     bit_slice: &'a mut BitSlice<LocalBits, u8>,
 }
@@ -216,6 +222,12 @@ impl<'a> BufferBitSliceMut<'a> {
     #[inline]
     pub fn to_slice(&self) -> &[u8] {
         self.bit_slice.as_slice()
+    }
+}
+
+impl<'a> PartialEq for BufferBitSliceMut<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.bit_slice == other.bit_slice
     }
 }
 

@@ -388,9 +388,18 @@ impl ArrowPrimitiveType for BooleanType {
     /// The pointer must be part of a bit-packed boolean array, and the index must be less than the
     /// size of the array.
     unsafe fn index(raw_ptr: *const Self::Native, i: usize) -> Self::Native {
-        let data = &[*(raw_ptr as *const u8)];
+        let data = unsafe {
+            std::slice::from_raw_parts(raw_ptr as *const u8, std::mem::size_of::<isize>())
+        };
         BufferBitSlice::new(data).get_bit(i)
     }
+}
+
+static BIT_MASK: [u8; 8] = [1, 2, 4, 8, 16, 32, 64, 128];
+
+#[inline]
+pub unsafe fn get_bit_raw(data: *const u8, i: usize) -> bool {
+    (*data.offset((i >> 3) as isize) & BIT_MASK[i & 7]) != 0
 }
 
 macro_rules! make_type {

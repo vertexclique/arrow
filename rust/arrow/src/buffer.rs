@@ -272,7 +272,7 @@ impl Buffer {
     /// Gives bit slice of the underlying buffer
     /// This method can be used to get bit views for bit operations on the immutable view over the buffer.
     pub fn bit_slice(&self) -> BufferBitSlice {
-        BufferBitSlice::new(self.data())
+        BufferBitSlice::new(self.data.data())
     }
 
     /// Count one bits in this buffer

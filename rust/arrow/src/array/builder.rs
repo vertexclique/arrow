@@ -339,9 +339,9 @@ impl<T: ArrowPrimitiveType> BufferBuilderTrait<T> for BufferBuilder<T> {
                         self.buffer.capacity(),
                     )
                 };
-                BufferBitSliceMut::new(data)
-                    .view(self.len, self.len+n)
-                    .set_bit_all(true);
+                (self.len..self.len+n).for_each(|i| {
+                    BufferBitSliceMut::new(data).set_bit(i, true);
+                });
             }
             self.len += n;
         } else {
@@ -601,8 +601,6 @@ impl<T: ArrowPrimitiveType> PrimitiveBuilder<T> {
     pub fn finish(&mut self) -> PrimitiveArray<T> {
         let len = self.len();
         let null_bit_buffer = self.bitmap_builder.finish();
-        dbg!(&null_bit_buffer);
-        dbg!(&null_bit_buffer.len());
         let null_count = len - null_bit_buffer.count_ones();
         let mut builder = ArrayData::builder(T::DATA_TYPE)
             .len(len)
