@@ -385,7 +385,6 @@ impl ArrowPrimitiveType for BooleanType {
     /// # Safety
     /// The pointer must be part of a bit-packed boolean array, and the index must be less than the
     /// size of the array.
-    #[inline]
     unsafe fn index(raw_ptr: *const Self::Native, i: usize) -> Self::Native {
         let data =
             std::slice::from_raw_parts(raw_ptr as *const u8, std::mem::size_of::<isize>());
