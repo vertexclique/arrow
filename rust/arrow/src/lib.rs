@@ -15,6 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![feature(stdsimd)]
+#![feature(repr_simd)]
+#![feature(avx512_target_feature)]
+
 //! A native Rust implementation of [Apache Arrow](https://arrow.apache.org), a cross-language
 //! development platform for in-memory data.
 //!
@@ -129,6 +133,11 @@
 #![allow(bare_trait_objects)]
 #![warn(missing_debug_implementations)]
 #![deny(clippy::redundant_clone)]
+
+// #[cfg(all(target_feature = "avx512f", feature = "avx512"))] {
+// #![feature(stdsimd)]
+// #![feature(avx512_target_feature)]
+// }
 
 pub mod array;
 pub mod bitmap;

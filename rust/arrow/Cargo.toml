@@ -52,7 +52,8 @@ hex = "0.4"
 prettytable-rs = { version = "0.8.0", optional = true }
 
 [features]
-default = []
+default = ["avx512"]
+avx512 = []
 simd = ["packed_simd"]
 prettyprint = ["prettytable-rs"]
 
