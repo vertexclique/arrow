@@ -537,15 +537,29 @@ pub(super) fn buffer_bin_and(
     right_offset_in_bits: usize,
     len_in_bits: usize,
 ) -> Buffer {
-    bitwise_bin_op_simd_helper(
-        &left,
-        left_offset_in_bits / 8,
-        &right,
-        right_offset_in_bits / 8,
-        len_in_bits / 8,
-        |a, b| a & b,
-        |a, b| a & b,
-    )
+    if left_offset_in_bits % 8 == 0
+        && right_offset_in_bits % 8 == 0
+        && len_in_bits % 8 == 0
+    {
+        bitwise_bin_op_simd_helper(
+            &left,
+            left_offset_in_bits / 8,
+            &right,
+            right_offset_in_bits / 8,
+            len_in_bits / 8,
+            |a, b| a & b,
+            |a, b| a & b,
+        )
+    } else {
+        bitwise_bin_op_helper(
+            &left,
+            left_offset_in_bits,
+            right,
+            right_offset_in_bits,
+            len_in_bits,
+            |a, b| a & b,
+        )
+    }
 }
 
 #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), not(any(feature = "simd", feature = "avx512"))))]
