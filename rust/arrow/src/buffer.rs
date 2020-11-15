@@ -36,8 +36,7 @@ use crate::memory;
 use crate::util::bit_chunk_iterator::BitChunks;
 use crate::util::bit_util;
 use crate::util::bit_util::ceil;
-#[cfg(feature = "simd")]
-use std::borrow::BorrowMut;
+#[cfg(any(feature = "simd", feature = "avx512"))]
 use std::borrow::BorrowMut;
 
 /// Buffer is a contiguous memory region of fixed size and is aligned at a 64-byte
@@ -454,9 +453,10 @@ where
     result.freeze()
 }
 
-#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), feature = "avx512"))]
+#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
 const AVX512_U8X64_LANES: usize = 64;
 
+#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
 #[target_feature(enable = "avx512f")]
 pub(super) unsafe fn avx512_bin_and(left: &[u8], right: &[u8], res: &mut [u8]) {
     use core::arch::x86_64::{__m512i, _mm512_loadu_ps, _mm512_and_si512};

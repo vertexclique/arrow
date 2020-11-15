@@ -15,10 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![feature(stdsimd)]
-#![feature(repr_simd)]
-#![feature(avx512_target_feature)]
-
 //! A native Rust implementation of [Apache Arrow](https://arrow.apache.org), a cross-language
 //! development platform for in-memory data.
 //!
@@ -127,6 +123,10 @@
 //! * ipc: [reader](ipc::reader::StreamReader) and [writer](ipc::writer::FileWriter)
 //!
 //! The parquet implementation is on a [separate crate](https://crates.io/crates/parquet)
+
+#![cfg_attr(feature = "avx512", feature(stdsimd))]
+#![cfg_attr(feature = "avx512", feature(repr_simd))]
+#![cfg_attr(feature = "avx512", feature(avx512_target_feature))]
 
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
