@@ -302,7 +302,6 @@ mod tests {
         buffer::Buffer,
         datatypes::{Field, ToByteSlice},
         memory,
-        util::utils,
     };
 
     use super::*;
@@ -586,7 +585,7 @@ mod tests {
         assert_eq!(1, sliced_array.offset());
         assert_eq!(3, sliced_array.null_count());
 
-        let mut null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
+        let null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
         for i in 0..sliced_array.len() {
             if null_bit_slice.get_bit(sliced_array.offset() + i) {
                 assert!(sliced_array.is_valid(i));
@@ -655,7 +654,7 @@ mod tests {
         assert_eq!(1, sliced_array.offset());
         assert_eq!(3, sliced_array.null_count());
 
-        let mut null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
+        let null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
         for i in 0..sliced_array.len() {
             if null_bit_slice.get_bit(sliced_array.offset() + i) {
                 assert!(sliced_array.is_valid(i));
@@ -723,7 +722,7 @@ mod tests {
         assert_eq!(1, sliced_array.offset());
         assert_eq!(2, sliced_array.null_count());
 
-        let mut null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
+        let null_bit_slice = BufferBitSliceMut::new(&mut null_bits);
         for i in 0..sliced_array.len() {
             if null_bit_slice.get_bit(sliced_array.offset() + i) {
                 assert!(sliced_array.is_valid(i));

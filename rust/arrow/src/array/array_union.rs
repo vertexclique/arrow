@@ -78,7 +78,6 @@ use crate::buffer::Buffer;
 use crate::datatypes::*;
 use crate::error::{ArrowError, Result};
 
-use crate::util::utils;
 use core::fmt;
 use std::any::Any;
 use std::mem;

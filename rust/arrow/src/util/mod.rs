@@ -16,7 +16,6 @@
 // under the License.
 
 pub mod bit_slice_iterator;
-pub mod utils;
 pub mod buffered_iterator;
 pub mod display;
 pub mod integration_util;
@@ -24,3 +23,4 @@ pub mod integration_util;
 pub mod pretty;
 pub mod string_writer;
 pub mod test_util;
+pub mod utils;

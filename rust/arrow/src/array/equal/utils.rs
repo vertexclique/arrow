@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{array::ArrayData, util::utils};
+use crate::array::ArrayData;
 use crate::util::bit_slice_iterator::BufferBitSlice;
 
 // whether bits along the positions are equal
@@ -28,7 +28,10 @@ pub(super) fn equal_bits(
     rhs_start: usize,
     len: usize,
 ) -> bool {
-    let (lhs, rhs) = (BufferBitSlice::new(lhs_values), BufferBitSlice::new(rhs_values));
+    let (lhs, rhs) = (
+        BufferBitSlice::new(lhs_values),
+        BufferBitSlice::new(rhs_values),
+    );
     lhs.view(lhs_start, len) == rhs.view(rhs_start, len)
 }
 

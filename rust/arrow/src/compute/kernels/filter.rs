@@ -21,13 +21,12 @@ use crate::array::*;
 use crate::datatypes::*;
 use crate::error::{ArrowError, Result};
 use crate::record_batch::RecordBatch;
+use crate::util::bit_slice_iterator::BufferBitSlice;
 use crate::{
     bitmap::Bitmap,
     buffer::{Buffer, MutableBuffer},
-    util::utils,
 };
 use std::{mem, sync::Arc};
-use crate::util::bit_slice_iterator::BufferBitSlice;
 
 /// trait for copying filtered null bitmap bits
 trait CopyNullBit {
@@ -94,7 +93,7 @@ impl<'a> NullBitSetter<'a> {
 impl<'a> CopyNullBit for NullBitSetter<'a> {
     #[inline]
     fn copy_null_bit(&mut self, source_index: usize) {
-        let mut source = BufferBitSlice::new(self.source_bytes);
+        let source = BufferBitSlice::new(self.source_bytes);
         if !source.get_bit(source_index) {
             self.target_buffer.unset_bit(self.target_index);
             self.null_count += 1;
@@ -322,7 +321,9 @@ impl FilterContext {
         }
         let filter_mask: Vec<u64> = (0..64).map(|x| 1u64 << x).collect();
         let filter_bytes = filter_array.data_ref().buffers()[0].data();
-        let filtered_count = BufferBitSlice::new(filter_bytes).view(0, filter_array.len()).count_ones();
+        let filtered_count = BufferBitSlice::new(filter_bytes)
+            .view(0, filter_array.len())
+            .count_ones();
 
         // transmute filter_bytes to &[u64]
         let mut u64_buffer = MutableBuffer::new(filter_bytes.len());

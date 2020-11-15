@@ -31,8 +31,8 @@ use crate::array::*;
 use crate::buffer::{Buffer, MutableBuffer};
 use crate::datatypes::*;
 use crate::error::{ArrowError, Result};
+use crate::util::bit_slice_iterator::BufferBitSliceMut;
 use crate::util::utils;
-use crate::util::bit_slice_iterator::{BufferBitSlice, BufferBitSliceMut};
 
 ///  Converts a `MutableBuffer` to a `BufferBuilder<T>`.
 ///
@@ -189,7 +189,7 @@ pub trait BufferBuilderTrait<T: ArrowPrimitiveType> {
     ///
     /// assert!(builder.capacity() >= 20);
     /// ```
-    fn reserve(&mut self, n: usize) -> ();
+    fn reserve(&mut self, n: usize);
 
     /// Appends a value of type `T` into the builder,
     /// growing the internal buffer as needed.
@@ -339,7 +339,7 @@ impl<T: ArrowPrimitiveType> BufferBuilderTrait<T> for BufferBuilder<T> {
                         self.buffer.capacity(),
                     )
                 };
-                (self.len..self.len+n).for_each(|i| {
+                (self.len..self.len + n).for_each(|i| {
                     BufferBitSliceMut::new(data).set_bit(i, true);
                 });
             }

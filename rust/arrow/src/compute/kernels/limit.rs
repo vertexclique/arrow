@@ -37,10 +37,9 @@ mod tests {
     use crate::array::*;
     use crate::buffer::Buffer;
     use crate::datatypes::{DataType, Field, ToByteSlice};
-    use crate::util::utils;
 
-    use std::sync::Arc;
     use crate::util::bit_slice_iterator::BufferBitSliceMut;
+    use std::sync::Arc;
 
     #[test]
     fn test_limit_array() {

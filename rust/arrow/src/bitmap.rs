@@ -20,7 +20,7 @@
 
 use crate::buffer::Buffer;
 use crate::error::Result;
-use crate::util::utils;
+
 use std::mem;
 
 use std::ops::{BitAnd, BitOr};
@@ -44,6 +44,7 @@ impl Bitmap {
         }
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.bits.len()
     }
@@ -52,8 +53,8 @@ impl Bitmap {
         self.bits.is_empty()
     }
 
+    #[inline]
     pub fn is_set(&self, i: usize) -> bool {
-        // assert!(i < (self.bits.len() << 3));
         self.bits.get_bit(i)
     }
 

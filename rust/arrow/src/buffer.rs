@@ -259,6 +259,7 @@ impl Buffer {
     /// Returns a slice of this buffer starting at a certain bit offset.
     /// If the offset is byte-aligned the returned buffer is a shallow clone,
     /// otherwise a new buffer is allocated and filled with a copy of the bits in the range.
+    #[inline]
     pub fn bit_view(&self, offset_in_bits: usize, len_in_bits: usize) -> Self {
         if offset_in_bits % 8 == 0 && len_in_bits % 8 == 0 {
             self.slice(offset_in_bits / 8)
@@ -271,16 +272,19 @@ impl Buffer {
 
     /// Gives bit slice of the underlying buffer
     /// This method can be used to get bit views for bit operations on the immutable view over the buffer.
+    #[inline]
     pub fn bit_slice(&self) -> BufferBitSlice {
         BufferBitSlice::new(self.data.data())
     }
 
     /// Count one bits in this buffer
+    #[inline]
     pub fn count_ones(&self) -> usize {
         self.bit_slice().count_ones()
     }
 
     /// Count zero bits in this buffer
+    #[inline]
     pub fn count_zeros(&self) -> usize {
         self.bit_slice().count_zeros()
     }
@@ -300,6 +304,7 @@ impl Buffer {
     }
 
     /// Returns an empty buffer.
+    #[inline]
     pub fn empty() -> Self {
         unsafe { Self::from_raw_parts(BUFFER_INIT.as_ptr() as _, 0, 0) }
     }
@@ -842,11 +847,13 @@ impl MutableBuffer {
     }
 
     /// Count one bits in this buffer
+    #[inline]
     pub fn count_ones(&self) -> usize {
         self.bit_slice().count_ones()
     }
 
     /// Count zero bits in this buffer
+    #[inline]
     pub fn count_zeros(&self) -> usize {
         self.bit_slice().count_zeros()
     }
@@ -896,7 +903,7 @@ unsafe impl Send for MutableBuffer {}
 
 #[cfg(test)]
 mod tests {
-    use crate::util::utils;
+
     use std::ptr::null_mut;
     use std::thread;
 

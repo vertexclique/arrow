@@ -64,11 +64,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
 
     use super::*;
-    use crate::util::test_util::seedable_rng;
-    use rand::Rng;
 
     #[test]
     fn test_round_upto_multiple_of_64() {

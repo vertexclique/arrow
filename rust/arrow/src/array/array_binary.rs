@@ -25,7 +25,7 @@ use super::{
     Array, ArrayData, ArrayDataRef, FixedSizeListArray, GenericBinaryIter,
     GenericListArray, LargeListArray, ListArray, OffsetSizeTrait,
 };
-use crate::util::utils;
+
 use crate::{buffer::Buffer, datatypes::ToByteSlice};
 use crate::{buffer::MutableBuffer, datatypes::DataType};
 

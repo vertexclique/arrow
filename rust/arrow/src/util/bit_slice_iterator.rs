@@ -21,8 +21,6 @@ use bitvec::prelude::*;
 use bitvec::slice::ChunksExact;
 
 use std::fmt::Debug;
-use std::convert::identity;
-use std::borrow::BorrowMut;
 
 ///
 /// Immutable bit slice representation of buffer data
@@ -150,11 +148,9 @@ impl<'a> BufferBitSliceMut<'a> {
     /// Creates a mutable bit slice over the given data
     #[inline]
     pub fn new(buffer_data: &'a mut [u8]) -> Self {
-        let mut bit_slice = BitSlice::<LocalBits, _>::from_slice_mut(buffer_data).unwrap();
+        let bit_slice = BitSlice::<LocalBits, _>::from_slice_mut(buffer_data).unwrap();
 
-        BufferBitSliceMut {
-            bit_slice,
-        }
+        BufferBitSliceMut { bit_slice }
     }
 
     ///

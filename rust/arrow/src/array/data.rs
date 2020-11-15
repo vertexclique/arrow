@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use crate::buffer::Buffer;
 use crate::datatypes::DataType;
-use crate::util::utils;
+
 use crate::{bitmap::Bitmap, datatypes::ArrowNativeType};
 
 use super::equal::equal;
@@ -32,8 +32,7 @@ use super::equal::equal;
 fn count_nulls(null_bit_buffer: Option<&Buffer>, offset: usize, len: usize) -> usize {
     if let Some(ref buf) = null_bit_buffer {
         let ones = buf.bit_slice().view(offset, len).count_ones();
-        len.checked_sub(ones)
-            .unwrap()
+        len.checked_sub(ones).unwrap()
     } else {
         0
     }
@@ -343,7 +342,6 @@ mod tests {
 
     use crate::buffer::Buffer;
     use crate::datatypes::ToByteSlice;
-    use crate::util::utils;
     use crate::util::bit_slice_iterator::BufferBitSliceMut;
 
     #[test]

@@ -23,13 +23,10 @@ use std::{any::Any, sync::Arc};
 
 use super::{make_array, Array, ArrayData, ArrayDataRef, ArrayRef};
 use crate::datatypes::DataType;
+use crate::error::{ArrowError, Result};
 use crate::{
     buffer::{buffer_bin_or, Buffer},
     datatypes::Field,
-};
-use crate::{
-    error::{ArrowError, Result},
-    util::utils,
 };
 
 /// A nested array type where each child (called *field*) is represented by a separate
