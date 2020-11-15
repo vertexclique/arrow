@@ -28,7 +28,7 @@ fn create_buffer(size: usize) -> Buffer {
     let mut result = MutableBuffer::new(size).with_bitset(size, false);
 
     for i in 0..size {
-        result.data_mut()[i] = 0b01010101 << (i % 8);
+        result.data_mut()[i] = 0b01010101;
     }
 
     result.freeze()
