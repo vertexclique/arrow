@@ -134,11 +134,6 @@
 #![warn(missing_debug_implementations)]
 #![deny(clippy::redundant_clone)]
 
-// #[cfg(all(target_feature = "avx512f", feature = "avx512"))] {
-// #![feature(stdsimd)]
-// #![feature(avx512_target_feature)]
-// }
-
 pub mod array;
 pub mod bitmap;
 pub mod buffer;
