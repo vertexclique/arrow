@@ -459,18 +459,14 @@ const AVX512_U8X64_LANES: usize = 64;
 #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
 #[target_feature(enable = "avx512f")]
 pub(super) unsafe fn avx512_bin_and(left: &[u8], right: &[u8], res: &mut [u8]) {
-    use core::arch::x86_64::{__m512i, _mm512_loadu_ps, _mm512_and_si512};
+    use core::arch::x86_64::{__m512i, _mm512_and_si512, _mm512_loadu_ps};
 
     let l: __m512i = std::mem::transmute(_mm512_loadu_ps(left.as_ptr() as *const _));
     let r: __m512i = std::mem::transmute(_mm512_loadu_ps(right.as_ptr() as *const _));
     let f = _mm512_and_si512(l, r);
     let s = &f as *const __m512i as *const u8;
     let d = res.get_unchecked_mut(0) as *mut _ as *mut u8;
-    std::ptr::copy_nonoverlapping(
-        s,
-        d,
-        std::mem::size_of::<__m512i>(),
-    );
+    std::ptr::copy_nonoverlapping(s, d, std::mem::size_of::<__m512i>());
 }
 
 #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
@@ -479,9 +475,8 @@ pub(super) fn buffer_bin_and(
     left_offset_in_bits: usize,
     right: &Buffer,
     right_offset_in_bits: usize,
-    len_in_bits: usize
-) -> Buffer
-{
+    len_in_bits: usize,
+) -> Buffer {
     if left_offset_in_bits % 8 == 0
         && right_offset_in_bits % 8 == 0
         && len_in_bits % 8 == 0
@@ -493,7 +488,8 @@ pub(super) fn buffer_bin_and(
         let mut result = MutableBuffer::new(len).with_bitset(len, false);
 
         let mut left_chunks = left.data()[left_offset..].chunks_exact(AVX512_U8X64_LANES);
-        let mut right_chunks = right.data()[right_offset..].chunks_exact(AVX512_U8X64_LANES);
+        let mut right_chunks =
+            right.data()[right_offset..].chunks_exact(AVX512_U8X64_LANES);
         let mut result_chunks = result.data_mut().chunks_exact_mut(AVX512_U8X64_LANES);
 
         result_chunks
@@ -562,7 +558,10 @@ pub(super) fn buffer_bin_and(
     }
 }
 
-#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), not(any(feature = "simd", feature = "avx512"))))]
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    not(any(feature = "simd", feature = "avx512"))
+))]
 pub(super) fn buffer_bin_and(
     left: &Buffer,
     left_offset_in_bits: usize,

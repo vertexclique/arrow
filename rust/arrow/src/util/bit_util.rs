@@ -372,7 +372,9 @@ mod tests {
         let buf1 = [0b00110011u8; 64];
         let buf2 = [0b11110000u8; 64];
         let mut buf3 = [0b00000000; 64];
-        unsafe { avx512_bin_and(&buf1, &buf2, &mut buf3); };
+        unsafe {
+            avx512_bin_and(&buf1, &buf2, &mut buf3);
+        };
         for i in buf3.iter() {
             assert_eq!(&0b00110000u8, i);
         }
