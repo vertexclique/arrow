@@ -41,6 +41,7 @@ use serde_json::{
 
 use crate::error::{ArrowError, Result};
 use crate::util::bit_util;
+use num::NumCast;
 
 /// The set of datatypes that are supported by this implementation of Apache Arrow.
 ///
@@ -198,6 +199,11 @@ pub trait ArrowNativeType:
 {
     fn into_json_value(self) -> Option<Value>;
 
+    /// Convert native type from isize.
+    fn from_isize(_: isize) -> Option<Self> {
+        None
+    }
+
     /// Convert native type from usize.
     fn from_usize(_: usize) -> Option<Self> {
         None
@@ -205,6 +211,14 @@ pub trait ArrowNativeType:
 
     /// Convert native type to usize.
     fn to_usize(&self) -> Option<usize> {
+        None
+    }
+
+    /// Cast native type to destination type
+    fn cast<T>(self) -> Option<T>
+        where
+            T: NumCast,
+    {
         None
     }
 }
@@ -250,12 +264,23 @@ impl ArrowNativeType for i8 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -264,12 +289,23 @@ impl ArrowNativeType for i16 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -278,12 +314,23 @@ impl ArrowNativeType for i32 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -292,12 +339,23 @@ impl ArrowNativeType for i64 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -306,12 +364,23 @@ impl ArrowNativeType for u8 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -320,12 +389,23 @@ impl ArrowNativeType for u16 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -334,12 +414,23 @@ impl ArrowNativeType for u32 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
 
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 
@@ -348,6 +439,10 @@ impl ArrowNativeType for u64 {
         Some(VNumber(Number::from(self)))
     }
 
+    fn from_isize(v: isize) -> Option<Self> {
+        num::FromPrimitive::from_isize(v)
+    }
+
     fn from_usize(v: usize) -> Option<Self> {
         num::FromPrimitive::from_usize(v)
     }
@@ -355,17 +450,38 @@ impl ArrowNativeType for u64 {
     fn to_usize(&self) -> Option<usize> {
         num::ToPrimitive::to_usize(self)
     }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
+    }
 }
 
 impl ArrowNativeType for f32 {
     fn into_json_value(self) -> Option<Value> {
         Number::from_f64(f64::round(self as f64 * 1000.0) / 1000.0).map(VNumber)
     }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
+    }
 }
 
 impl ArrowNativeType for f64 {
     fn into_json_value(self) -> Option<Value> {
         Number::from_f64(self).map(VNumber)
+    }
+
+    fn cast<T>(self) -> Option<T>
+    where
+        T: NumCast,
+    {
+        NumCast::from(self)
     }
 }
 

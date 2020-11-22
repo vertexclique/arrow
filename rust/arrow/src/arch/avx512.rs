@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::array::*;
+use crate::datatypes::{ArrowPrimitiveType, ArrowNativeType};
+
 pub(crate) const AVX512_U8X64_LANES: usize = 64;
 
 ///
@@ -169,18 +172,18 @@ pub(crate) const PERMUTE_EXCHANGE_WIDTH: usize = 8;
 
 ///
 /// Merge layer for sorting network
-fn merger_net(mut input: Vec<i64>) -> Vec<i64> {
-    let half = input.len() / 2;
-    if half > PERMUTE_EXCHANGE_WIDTH {
-        (0..half).into_iter().for_each(|e| unsafe {
+fn merger_net(mut input: &mut [i64], mark: usize, slice: usize) -> &mut [i64] {
+    let half = slice / 2;
+    if slice > 1 {
+        (mark..half+mark).into_iter().for_each(|e| unsafe {
             if input[e] > input[e + half] {
                 let pl: *mut i64 = &mut input[e];
                 let pr: *mut i64 = &mut input[e + half];
                 std::ptr::swap(pl, pr);
             }
         });
-        merger_net(input[..half].to_vec());
-        merger_net(input[half..].to_vec());
+        merger_net(&mut input, mark, half);
+        merger_net(&mut input, half+mark, half);
     }
     input
 }
@@ -205,11 +208,32 @@ pub(crate) unsafe fn avx512_vec_sort_i64(input: &[i64]) -> Vec<i64> {
         } else {
             let mut it = input.chunks_exact(input.len() / 2);
             let l = avx512_vec_sort_i64(it.next().unwrap());
-            let r = avx512_vec_sort_i64(it.next().unwrap());
-            let c = [l, r].concat();
-            merger_net(c)
+            let mut r = avx512_vec_sort_i64(it.next().unwrap());
+            r.reverse();
+            let mut c = [l, r].concat();
+            let c = c.as_mut_slice();
+            merger_net(c, 0, c.len()).to_vec()
         }
     }
+}
+
+pub(crate) fn avx512_kv_sort<T>(values: &PrimitiveArray<T>, value_indices: Vec<u32>) -> Vec<(u32, T::Native)>
+where
+    T: ArrowPrimitiveType
+{
+    let value_data = value_indices
+        .iter()
+        .map(|index| {
+            *index as i64 | (values.value(*index as usize).cast::<i64>().unwrap() << 32)
+        })
+        .collect::<Vec<i64>>();
+
+    unsafe { avx512_vec_sort_i64(value_data.as_slice()) }.iter().map(|e| {
+        let i = ((*e << 32) >> 32) as u32;
+        let v = T::Native::from_isize(((*e ^ (i as i64)) >> 32) as isize).unwrap();
+        (i, v)
+    })
+    .collect::<Vec<(u32, T::Native)>>()
 }
 
 #[cfg(test)]
@@ -261,6 +285,13 @@ mod tests {
     }
 
     #[test]
+    fn test_vec_sort_i64_avx512_bounds() {
+        let buf1 = (i64::min_value()..i64::min_value()+16).into_iter().rev().collect::<Vec<i64>>();
+        let res = unsafe { avx512_vec_sort_i64(&buf1) };
+        assert_eq!(res, (i64::min_value()..i64::min_value()+16).into_iter().collect::<Vec<i64>>());
+    }
+
+    #[test]
     fn test_vec_sort_i64_avx512() {
         let buf1 = (0..128_i64).into_iter().rev().collect::<Vec<i64>>();
         let res = unsafe { avx512_vec_sort_i64(&buf1) };
@@ -269,5 +300,114 @@ mod tests {
         let buf1 = (0..8192_i64).into_iter().rev().collect::<Vec<i64>>();
         let res = unsafe { avx512_vec_sort_i64(&buf1) };
         assert_eq!(res, (0..8192_i64).into_iter().collect::<Vec<i64>>());
+    }
+
+    #[test]
+    fn test_vec_sort_i64_avx512_redundant() {
+        let mut buf1 = [1, 2, 3, 4_i64]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .map(|e| *e)
+            .collect::<Vec<i64>>();
+
+        let res = unsafe { avx512_vec_sort_i64(&buf1) };
+
+        buf1.sort();
+        assert_eq!(res, buf1);
+    }
+
+    #[test]
+    fn test_vec_sort_i8_array_avx512() {
+        let mut kvs = [1, 2, 3, 4_i8]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx as u32, *e))
+            .collect::<Vec<(u32, i8)>>();
+
+        let idxs = kvs.iter().map(|(k, _)| *k).collect::<Vec<u32>>();
+        let values = kvs.iter().map(|(_, v)| *v).collect::<Vec<i8>>();
+        let array = Int8Array::from(values);
+
+        let res = avx512_kv_sort(&array, idxs);
+
+        kvs.sort_by(|a, b| a.1.cmp(&b.1));
+        assert_eq!(res, kvs);
+    }
+
+    #[test]
+    fn test_vec_sort_i16_array_avx512() {
+        let mut kvs = [4, 3, 2, 1_i16]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx as u32, *e))
+            .collect::<Vec<(u32, i16)>>();
+
+        let idxs = kvs.iter().map(|(k, _)| *k).collect::<Vec<u32>>();
+        let values = kvs.iter().map(|(_, v)| *v).collect::<Vec<i16>>();
+        let array = Int16Array::from(values);
+
+        let res = avx512_kv_sort(&array, idxs);
+
+        kvs.sort_by(|a, b| a.1.cmp(&b.1));
+        assert_eq!(res, kvs);
+    }
+
+    #[test]
+    fn test_vec_sort_i32_array_avx512() {
+        let mut kvs = [i32::max_value(), 3, i32::min_value(), 1_i32]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx as u32, *e))
+            .collect::<Vec<(u32, i32)>>();
+
+        let idxs = kvs.iter().map(|(k, _)| *k).collect::<Vec<u32>>();
+        let values = kvs.iter().map(|(_, v)| *v).collect::<Vec<i32>>();
+        let array = Int32Array::from(values);
+
+        let res = avx512_kv_sort(&array, idxs);
+
+        kvs.sort_by(|a, b| a.1.cmp(&b.1));
+        assert_eq!(res, kvs);
+    }
+
+    #[test]
+    fn test_vec_sort_u8_array_avx512() {
+        let mut kvs = [u8::max_value(), 3, u8::min_value(), 1_u8]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx as u32, *e))
+            .collect::<Vec<(u32, u8)>>();
+
+        let idxs = kvs.iter().map(|(k, _)| *k).collect::<Vec<u32>>();
+        let values = kvs.iter().map(|(_, v)| *v).collect::<Vec<u8>>();
+        let array = UInt8Array::from(values);
+
+        let res = avx512_kv_sort(&array, idxs);
+
+        kvs.sort_by(|a, b| a.1.cmp(&b.1));
+        assert_eq!(res, kvs);
+    }
+
+    #[test]
+    fn test_vec_sort_u16_array_avx512() {
+        let mut kvs = [u16::max_value(), 3, u16::min_value(), 1_u16]
+            .repeat(2_i32.pow(18) as usize)
+            .iter()
+            .enumerate()
+            .map(|(idx, e)| (idx as u32, *e))
+            .collect::<Vec<(u32, u16)>>();
+
+        let idxs = kvs.iter().map(|(k, _)| *k).collect::<Vec<u32>>();
+        let values = kvs.iter().map(|(_, v)| *v).collect::<Vec<u16>>();
+        let array = UInt16Array::from(values);
+
+        let res = avx512_kv_sort(&array, idxs);
+
+        kvs.sort_by(|a, b| a.1.cmp(&b.1));
+        assert_eq!(res, kvs);
     }
 }

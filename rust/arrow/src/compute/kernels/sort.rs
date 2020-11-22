@@ -245,30 +245,28 @@ where
 
     let perm_exch_width = PERMUTE_EXCHANGE_WIDTH * 2;
 
+    let operable_types =
+        T::DATA_TYPE == DataType::Int32 ||
+            T::DATA_TYPE == DataType::Int16 ||
+            T::DATA_TYPE == DataType::Int8 ||
+            T::DATA_TYPE == DataType::UInt8 ||
+            T::DATA_TYPE == DataType::UInt16 ||
+            T::DATA_TYPE == DataType::Time32(TimeUnit::Second) ||
+            T::DATA_TYPE == DataType::Time32(TimeUnit::Millisecond) ||
+            T::DATA_TYPE == DataType::Interval(IntervalUnit::YearMonth);
+
     let valids = if crate::util::bit_util::is_power_of_two(values.len())
-        && values.len() > perm_exch_width
+        && values.len() > perm_exch_width && operable_types
     {
-        let value_data = value_indices
-            .iter()
-            .copied()
-            .map(|e| e as i64)
-            .collect::<Vec<i64>>();
-        let value_data = unsafe {
-            if !descending {
-                avx512_vec_sort_i64(&value_data)
-            } else {
-                let mut d = avx512_vec_sort_i64(&value_data);
-                d.reverse();
-                nans.reverse();
-                nulls.reverse();
-                d
-            }
-        };
-        // create tuples after the actual sorting
-        value_data
-            .iter()
-            .map(|index| (*index as u32, values.value(*index as usize)))
-            .collect::<Vec<(u32, T::Native)>>()
+        if !descending {
+            avx512_kv_sort(&values, value_indices)
+        } else {
+            let mut d = avx512_kv_sort(&values, value_indices);
+            d.reverse();
+            nans.reverse();
+            nulls.reverse();
+            d
+        }
     } else {
         // create tuples that are used for sorting
         let mut valids = value_indices
@@ -965,6 +963,18 @@ mod tests {
         let mut expected = data.clone();
         expected.sort();
         test_sort_primitive_arrays::<UInt8Type>(data, None, expected);
+    }
+
+    #[test]
+    fn test_sort_primitives_large_power_of_two() {
+        let data = [1, 2, 3, 4_i32]
+            .repeat(2_i32.pow(3) as usize)
+            .iter()
+            .map(|e| Some(*e))
+            .collect::<Vec<Option<i32>>>();
+        let mut expected = data.clone();
+        expected.sort();
+        test_sort_primitive_arrays::<Int32Type>(data, None, expected);
     }
 
     #[test]
