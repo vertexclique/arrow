@@ -90,6 +90,18 @@ impl<'a, K: ArrowPrimitiveType> DictionaryArray<K> {
         PrimitiveArray::<K>::from(Arc::new(keys_data))
     }
 
+    // pub fn key_value_iter<V>(&self)
+    // where
+    //     V: Array
+    // {
+    //     let values = self.values();
+    //     let values = values.as_any().downcast_ref::<V>()?;
+    //
+    //     self.keys_array()
+    //         .iter()
+    //         .map(|k| values.value())
+    // }
+
     /// Returns the lookup key by doing reverse dictionary lookup
     pub fn lookup_key(&self, value: &str) -> Option<K::Native> {
         let rd_buf: &StringArray =

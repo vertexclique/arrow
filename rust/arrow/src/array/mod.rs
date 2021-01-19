@@ -100,6 +100,7 @@ mod ffi;
 mod iterator;
 mod null;
 mod ord;
+mod value;
 mod raw_pointer;
 mod transform;
 

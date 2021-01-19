@@ -30,6 +30,7 @@ use super::raw_pointer::RawPtrBox;
 use super::*;
 use crate::buffer::{Buffer, MutableBuffer};
 use crate::util::bit_util;
+use crate::array::value::ValueAccessors;
 
 /// Number of seconds in a day
 const SECONDS_IN_DAY: i64 = 86_400;
@@ -84,13 +85,24 @@ impl<T: ArrowPrimitiveType> PrimitiveArray<T> {
     pub fn builder(capacity: usize) -> PrimitiveBuilder<T> {
         PrimitiveBuilder::<T>::new(capacity)
     }
+    //
+    //
+    // pub fn value(&self, i: usize) -> T::Native {
+    //     let offset = i + self.offset();
+    //     unsafe { *self.raw_values.as_ptr().add(offset) }
+    // }
+}
 
+impl<T> ValueAccessors<T::Native> for PrimitiveArray<T>
+where
+    T: ArrowPrimitiveType
+{
     /// Returns the primitive value at index `i`.
     ///
     /// Note this doesn't do any bound checking, for performance reason.
     /// # Safety
     /// caller must ensure that the passed in offset is less than the array len()
-    pub fn value(&self, i: usize) -> T::Native {
+    fn value(&self, i: usize) -> T::Native {
         let offset = i + self.offset();
         unsafe { *self.raw_values.as_ptr().add(offset) }
     }
